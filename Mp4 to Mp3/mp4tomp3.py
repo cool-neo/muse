@@ -43,7 +43,4 @@ convert_btn.grid(row=2,column=0)
 exit_btn = Button(root,text="Exit Application",width=25, command=root.destroy,bg="purple",fg="white")
 exit_btn.grid(row=2,column=1)
 
-
-
-
 root.mainloop()
