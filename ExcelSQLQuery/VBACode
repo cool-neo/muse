@@ -1,1 +1,95 @@
-.
+Option Explicit
+'Testing'
+
+Sub test()
+QueryExcel ("SELECT State FROM [Location$]")
+End Sub
+
+'Building ExcelSQL Query function'
+
+Sub QueryExcel(ByVal SQL_Statement As String)
+On Error GoTo errHandle
+
+'Creating connection and recordset'
+
+Dim conn As ADODB.Connection
+Dim rst As ADODB.Recordset
+
+Dim sConnection As String, sSQL As String
+Dim ws As Worksheet, i As Integer, iCheck As Integer
+Dim num_records As Long
+
+'Connecting workbook with MS ActiveX Data objects library'
+
+sConnection = "Provider= Microsoft.ACE.OLEDB.12.0;Data source=" & ActiveWorkbook.FullName & _
+            ";Extended Properties='Excel 12.0;HDR=Yes;IMEX=0;Readonly=False';"
+            
+Set conn = CreateObject("ADODB.Connection")
+Set rst = CreateObject("ADODB.Recordset")
+
+sSQL = UCase(SQL_Statement)
+
+conn.Open sConnection
+
+'Avoiding update and insert statements'
+
+If Left(sSQL, 6) = "UPDATE" Or InStr(sSQL, "INSERT INTO") = 1 Then
+    conn.Execute sSQL, num_records
+
+'Displaying number of rows affected'
+
+    MsgBox num_records & "records affected", vbInformation
+    
+Else
+
+    'Opening connection'
+    
+    rst.Open sSQL, conn, adOpenDynamic, adLockOptimistic
+    Set ws = Worksheets.Add
+    With ws
+    
+        'Moving queried data to recordset created'
+    
+        .Move After:=ThisWorkbook.Worksheets(Sheets.Count)
+        
+        'Copying data to new sheet from recordset'
+        
+        .Range("A1").CopyFromRecordset rst
+        
+        'Copy-pasting headers from recordset'
+        
+        For i = 0 To rst.Fields.Count - 1
+            Cells(1, i + 1) = rst.Fields(i).Name
+        Next i
+    End With
+End If
+Exit Sub
+
+'Exit Door in case of error'
+
+Door:
+If rst.State <> 0 Then rst.Close
+If conn.State <> 0 Then conn.Close
+
+Set rst = Nothing
+Set conn = Nothing
+Set ws = Nothing
+
+Exit Sub
+
+errHandle:
+
+'Displaying error'
+
+MsgBox "Error:" & Err.Description, vbInformation, "Excel SQL Application"
+
+GoTo Door
+
+End Sub
+
+'Function to launch ExcelSQL Query form'
+
+Sub Launch_ExcelSql_Form()
+    frmExcelSQLQueryForm.Show vbModeless
+End Sub
+
